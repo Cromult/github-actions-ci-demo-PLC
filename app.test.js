@@ -1,7 +1,14 @@
 const request = require('supertest');
 const app = require('./app'); // Importamos tu app
+const { pool, server } = require('./app');
+
+let testServer;
 
 describe('Pruebas CRUD - Entidad Categories', () => {
+    beforeAll((done) => {
+        // Crear un servidor de prueba si no existe
+        testServer = app.listen(0, done);
+    });
     let createdCategoryId;
 
     // Test: Crear una categoría
@@ -58,5 +65,13 @@ describe('Pruebas CRUD - Entidad Categories', () => {
     test('DELETE /categories/:id - Debería dar 404 si el ID no existe', async () => {
         const response = await request(app).delete('/categories/9999');
         expect(response.statusCode).toBe(404);
+    });
+
+    // Cerrar la conexión después de todas las pruebas
+    afterAll(async () => {
+        if (testServer) {
+            testServer.close();
+        }
+        await pool.end();
     });
 });

@@ -86,8 +86,13 @@ app.delete('/categories/:id', async (req, res) => {
 
 
 
-app.listen(PORT, () => {
-    console.log(`🚀 APi funcional${PORT}`);
-});
+let server;
+if (require.main === module) {
+    server = app.listen(PORT, () => {
+        console.log(`🚀 APi funcional${PORT}`);
+    });
+}
 
 module.exports = app;
+module.exports.pool = pool;
+module.exports.server = server;
