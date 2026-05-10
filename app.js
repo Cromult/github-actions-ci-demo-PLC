@@ -88,10 +88,20 @@ app.delete('/categories/:id', async (req, res) => {
 
 
 let server;
+
+// Solo iniciamos el servidor y creamos la tabla si NO estamos en entorno de pruebas
 if (require.main === module) {
-    server = app.listen(PORT, () => {
-        console.log(`🚀 APi funcional${PORT}`);
-    });
+    pool.query(`
+        CREATE TABLE IF NOT EXISTS categories (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL
+        );
+    `).then(() => {
+        console.log("✅ Tabla 'categories' lista en la base de datos");
+        server = app.listen(PORT, () => {
+            console.log(`🚀 API funcional en el puerto ${PORT}`);
+        });
+    }).catch(err => console.error("❌ Error creando la tabla:", err));
 }
 
 module.exports = app;
