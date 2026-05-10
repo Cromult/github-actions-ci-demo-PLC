@@ -1,3 +1,2 @@
-```
-# github-actions-ci-demo-PLC
-```
+## Documentación
+- [Ver Informe Detallado del Laboratorio](./INFORME.md)
