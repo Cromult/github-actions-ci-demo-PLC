@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('./app'); // Importamos tu app
-const { pool, server } = require('./app');
+const { pool} = require('./app');
 
 let testServer;
 
