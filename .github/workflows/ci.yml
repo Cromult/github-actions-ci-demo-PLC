@@ -1,0 +1,70 @@
+name: CI Pipeline CRUD API
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # Setup del entorno de Base de Datos para las pruebas de integración
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: secretpassword
+          POSTGRES_DB: crud_db
+        ports:
+          - 5432:5432
+        # Esperamos a que la base de datos esté lista antes de correr los tests
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      # 2. Setup del entorno de ejecución (Node.js)
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Instalación de dependencias
+      - name: Instalar dependencias
+        run: npm ci
+
+      # 4. Compilación/tebuild (Omitido explícitamen ya que Node/Express no lo requiere, a diferencia de NestJS/TypeScript)
+      
+      # 5. Linting o análisis estático de código
+      - name: Ejecutar Linting
+        run: npm run lint
+
+      # 6. Ejecución de pruebas unitarias e integrales y 7. Generación de reporte de cobertura
+      - name: Ejecutar Pruebas y Cobertura
+        run: npm run test:coverage
+        env:
+          # Inyectamos las variables para que la App Node se conecte al servicio Postgres de arriba
+          DB_USER: admin
+          DB_PASSWORD: secretpassword
+          DB_NAME: crud_db
+          DB_HOST: localhost
+          DB_PORT: 5432
+          PORT: 3000
+
+      # Paso extra recomendado: Subir el reporte de cobertura generado como artefacto
+      - name: Subir reporte de cobertura
+        if: always() # Se ejecuta incluso si las pruebas fallan
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-cobertura
+          path: coverage/
