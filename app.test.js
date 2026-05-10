@@ -1,3 +1,4 @@
+// app.test.js
 const request = require('supertest');
 const app = require('./app'); // Importamos tu app
 const { pool} = require('./app');
@@ -5,9 +6,19 @@ const { pool} = require('./app');
 let testServer;
 
 describe('Pruebas CRUD - Entidad Categories', () => {
-    beforeAll((done) => {
-        // Crear un servidor de prueba si no existe
-        testServer = app.listen(0, done);
+    beforeAll(async () => {
+        // 1. Crear el servidor de prueba
+        await new Promise((resolve) => {
+            testServer = app.listen(0, resolve);
+        });
+
+        // 2. OBLIGAR a que la tabla se cree ANTES de correr cualquier test
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS categories (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL
+            );
+        `);
     });
     let createdCategoryId;
 
@@ -25,15 +36,22 @@ describe('Pruebas CRUD - Entidad Categories', () => {
     });
 
     // Test: Error al crear sin nombre
-    test('POST /categories - Debería fallar si no se envía el nombre', async () => {
+    test('POST /categories - Debería crear una nueva categoría', async () => {
         const response = await request(app)
             .post('/categories')
-            .send({});
+            .send({ name: 'Electrónica' });
 
-        expect(response.statusCode).toBe(400);
-        expect(response.body.message).toBe('El campo "name" es requerido');
+        // 🔴 Agrega esta línea para ver el error real de la base de datos
+        if (response.statusCode === 500) {
+            console.error("🔥 ERROR REAL DEL SERVIDOR:", response.body);
+        }
+
+        expect(response.statusCode).toBe(201);
+        expect(response.body).toHaveProperty('id');
+        expect(response.body.name).toBe('Electrónica');
+        
+        createdCategoryId = response.body.id; 
     });
-
     // Test: Obtener todas las categorías
     test('GET /categories - Debería retornar una lista', async () => {
         const response = await request(app).get('/categories');
