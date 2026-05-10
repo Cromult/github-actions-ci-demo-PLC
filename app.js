@@ -18,15 +18,6 @@ const pool = new Pool({
     port: process.env.DB_PORT || 5432,
 });
 
-// Inicializar la tabla automáticamente (útil para esta práctica)
-pool.query(`
-    CREATE TABLE IF NOT EXISTS categories (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL
-    );
-`).then(() => console.log("✅ Tabla 'categories' lista en la base de datos"))
-  .catch(err => console.error("❌ Error creando la tabla:", err));
-
 // 1. GET /categories: Listar todas
 app.get('/categories', async (req, res) => {
     try {
