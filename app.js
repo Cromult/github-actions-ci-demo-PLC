@@ -1,4 +1,5 @@
 // app.js
+//Para mostrar el merge de ramas
 require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
