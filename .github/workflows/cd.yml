@@ -22,7 +22,7 @@ jobs:
         with:
           context: .
           push: true
-          # Etiquetado semántico y por SHA del commit
+          # Etiquetado con 'latest' y con el SHA del commit para trazabilidad
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/api-crud:latest
             ${{ secrets.DOCKER_USERNAME }}/api-crud:${{ github.sha }}
@@ -48,20 +48,28 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Detener contenedores previos para limpiar el puerto 80
+            # 1. Asegurar que existe una red compartida para los contenedores
+            docker network create crud-network || true
+            
+            # 2. Asegurar que la base de datos esté conectada a dicha red
+            docker network connect crud-network api_db || true
+            
+            # 3. Limpiar el contenedor de la API anterior
             docker stop api-container || true
             docker rm api-container || true
             
-            # Descargar la imagen más reciente
+            # 4. Descargar la imagen más reciente desde Docker Hub
             docker pull ${{ secrets.DOCKER_USERNAME }}/api-crud:latest
             
-            # Ejecutar el contenedor mapeando el puerto 80 al 3000 interno
+            # 5. Ejecutar el nuevo contenedor en la red compartida
+            # Se usa el nombre del contenedor 'api_db' como host de la base de datos
             docker run -d \
               --name api-container \
+              --network crud-network \
               --restart unless-stopped \
               -p 80:3000 \
               -e DB_USER=admin \
               -e DB_PASSWORD=secretpassword \
               -e DB_NAME=crud_db \
-              -e DB_HOST=${{ secrets.SSH_HOST }} \
+              -e DB_HOST=api_db \
               ${{ secrets.DOCKER_USERNAME }}/api-crud:latest
